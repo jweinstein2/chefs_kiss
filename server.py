@@ -2,17 +2,25 @@ from flask import Flask, request, Response
 import requests
 import openai
 import json
+from dotenv import load_dotenv
+import os
+import re
+import argparse
+
 
 # TODO
 # 1. Handle multiple numbers? Multiple databases? 
 
-# Your Twilio credentials
-ACCOUNT_SID = ''
-AUTH_TOKEN = ''
+load_dotenv()
+
+# Twilio credentials
+ACCOUNT_SID = os.getenv('ACCOUNT_SID')
+AUTH_TOKEN = os.getenv('AUTH_TOKEN')
 TWILIO_NUMBER = '+18449092927'  # Your Twilio phone number
 
-NOTION_TOKEN = ""  # your integration token
-DATABASE_ID = "" # your database ID
+# Notion credentials
+NOTION_TOKEN = os.getenv('NOTION_TOKEN')
+DATABASE_ID = os.getenv('DATABASE_ID') 
 
 URL_PATTERN = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
@@ -97,7 +105,6 @@ def post_to_notion(title, ingredients, steps):
 
 
 # # Create OpenAI client
-# openai.api_key = os.getenv("OPENAI_API_KEY")
 ai_client = openai.OpenAI()
 
 def parse(html_content):
@@ -159,6 +166,7 @@ def fetch_recipe(url):
     else:
         print(f"Failed to fetch the page: {response.status_code}")
 
+
 app = Flask(__name__)
 
 @app.route("/sms", methods=['POST'])
@@ -166,6 +174,12 @@ def sms_reply():
     incoming_msg = request.form.get('Body')
     from_number = request.form.get('From')
     print(f"Received message from {from_number}: {incoming_msg}")
+    url = incoming_msg.strip()
+    if re.match(URL_PATTERN, url):
+        fetch_recipe(url)
+    else: 
+        print("Invalid URL format")
+        send_response(msg.from_, "Invalid URL format. Please send a valid recipe URL.")
 
     # Optional response
     resp = MessagingResponse()
@@ -173,4 +187,10 @@ def sms_reply():
     return Response(str(resp), mimetype="application/xml")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Recipe Fetcher Server")
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    args = parser.parse_args()
+    if args.debug:
+        fetch_recipe("https://www.allrecipes.com/recipe/264430/easy-instant-pot-chicken-tikka-masala/")
+
     app.run(debug=True)
