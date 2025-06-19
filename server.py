@@ -177,14 +177,17 @@ def sms_reply():
     url = incoming_msg.strip()
     if re.match(URL_PATTERN, url):
         fetch_recipe(url)
+        msg = "Thank you! Your recipe has been processed and saved to Notion."
     else: 
         print("Invalid URL format")
-        send_response(msg.from_, "Invalid URL format. Please send a valid recipe URL.")
+        msg = "Invalid URL format. Please send a valid recipe URL."
 
-    # Optional response
-    resp = MessagingResponse()
-    resp.message("Thanks for your message!")
-    return Response(str(resp), mimetype="application/xml")
+    response = f"""
+    <Response>
+        <Message>{msg}</Message>
+    </Response>
+    """
+    return Response(response, mimetype='text/xml')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Recipe Fetcher Server")
