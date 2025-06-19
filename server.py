@@ -193,4 +193,5 @@ if __name__ == "__main__":
     if args.debug:
         fetch_recipe("https://www.allrecipes.com/recipe/264430/easy-instant-pot-chicken-tikka-masala/")
 
-    app.run(debug=True)
+    port = os.getenv('PORT', 4000)
+    app.run(debug=True, host="0.0.0.0", port=port)
