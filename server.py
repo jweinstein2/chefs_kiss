@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import re
 import argparse
+import threading
 
 
 # TODO
@@ -176,8 +177,10 @@ def sms_reply():
     print(f"Received message from {from_number}: {incoming_msg}")
     url = incoming_msg.strip()
     if re.match(URL_PATTERN, url):
-        fetch_recipe(url)
-        msg = "Thank you! Your recipe has been processed and saved to Notion."
+         # Kick off background thread
+        thread = threading.Thread(target=fetch_recipe, args=(url,))
+        thread.start()
+        msg = "Your recipe is being processed"
     else: 
         print("Invalid URL format")
         msg = "Invalid URL format. Please send a valid recipe URL."
@@ -194,7 +197,9 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     args = parser.parse_args()
     if args.debug:
-        fetch_recipe("https://www.allrecipes.com/recipe/264430/easy-instant-pot-chicken-tikka-masala/")
+        test_url = "https://www.allrecipes.com/recipe/264430/easy-instant-pot-chicken-tikka-masala/"
+        thread = threading.Thread(target=fetch_recipe, args=(test_url,))
+        thread.start()
 
     port = os.getenv('PORT', 4000)
     app.run(debug=True, host="0.0.0.0", port=port)
